@@ -1,0 +1,181 @@
+{% extends 'downloader/base.html' %}
+
+{% block title %}Dashboard - YT Downloader{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Main Left Column: Downloader UI -->
+    <div class="col-lg-8">
+        <!-- Paste URL Card -->
+        <div class="glass-card p-5 mb-4">
+            <h2 class="fw-bold mb-3 text-center glow-text">Download YouTube Content</h2>
+            <p class="text-secondary text-center mb-4">Paste any YouTube video or playlist link below to start</p>
+            
+            <!-- Error Alert -->
+            <div class="alert alert-danger border-0 bg-danger-subtle text-danger p-3 rounded-3 mb-4 d-none" id="error-alert" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i><span id="error-text">An error occurred.</span>
+            </div>
+
+            <form id="url-form">
+                {% csrf_token %}
+                <div class="input-group input-group-lg gap-2">
+                    <span class="input-group-text glass-input border-0 bg-opacity-10 px-3">
+                        <i class="bi bi-link-45deg fs-4 text-secondary"></i>
+                    </span>
+                    <input type="url" class="form-control glass-input flex-grow-1" id="url-input" placeholder="Paste YouTube link here... (e.g. https://www.youtube.com/watch?v=...)" required>
+                    <button class="btn btn-primary-gradient px-4 fs-6" type="submit" id="analyze-btn">
+                        <i class="bi bi-search me-1"></i> Analyze
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Dynamic Loading state -->
+        <div class="d-none text-center my-5 py-4" id="analysis-loading">
+            <div class="spinner-border spinner-glow mb-3" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <h5 class="text-light fw-bold">Extracting YouTube Metadata...</h5>
+            <p class="text-secondary small">Querying video details and parsing streams</p>
+        </div>
+
+        <!-- Dynamic Preview Container -->
+        <div class="mt-4 mb-4 d-none" id="preview-container">
+            <div class="glass-card p-4" id="preview-content">
+                <!-- Javascript will render preview here -->
+            </div>
+        </div>
+
+        <!-- Download History Card -->
+        <div class="glass-card p-4">
+            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 mb-4 border-bottom border-secondary-subtle pb-3">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-clock-history text-purple fs-4 glow-text-purple"></i>
+                    <h4 class="fw-bold mb-0">Download History</h4>
+                </div>
+                <div class="position-relative w-100 w-sm-auto">
+                    <span class="position-absolute top-50 start-0 translate-middle-y ps-3 text-secondary">
+                        <i class="bi bi-funnel"></i>
+                    </span>
+                    <input type="text" class="form-control glass-input py-2 ps-5 pe-3" id="history-search" placeholder="Filter history..." style="font-size: 0.9rem;">
+                </div>
+            </div>
+
+            <div class="download-list" id="history-list">
+                {% if history_downloads %}
+                    {% for item in history_downloads %}
+                        <div class="download-item history-download-item d-flex align-items-center justify-content-between gap-3 py-3" id="history-item-{{ item.download_id }}">
+                            <div class="d-flex align-items-center gap-3 min-w-0">
+                                <div class="thumbnail-preview flex-shrink-0 bg-dark rounded" style="width: 80px; height: 50px;">
+                                    {% if item.thumbnail_url %}
+                                        <img src="{{ item.thumbnail_url }}" alt="Thumbnail" class="w-100 h-100 object-fit-cover rounded">
+                                    {% else %}
+                                        <div class="w-100 h-100 d-flex align-items-center justify-content-center text-secondary">
+                                            <i class="bi bi-play-btn"></i>
+                                        </div>
+                                    {% endif %}
+                                    {% if item.duration %}
+                                        <span class="duration-tag">
+                                            {% if item.duration >= 3600 %}
+                                                {{ item.duration|divisibleby:3600 }}:{{ item.duration|filesizeformat }}
+                                            {% else %}
+                                                {{ item.duration|floatformat:"0" }}s
+                                            {% endif %}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                <div class="min-w-0">
+                                    <h6 class="fw-bold mb-1 text-truncate video-title text-light" style="max-width: 350px;" title="{{ item.video_title }}">{{ item.video_title }}</h6>
+                                    <div class="d-flex flex-wrap gap-2 align-items-center text-secondary small">
+                                        <span class="badge text-uppercase bg-secondary text-light">{{ item.download_format }} {% if item.download_format == 'MP4' %}{{ item.video_quality }}{% endif %}</span>
+                                        <span>&bull;</span>
+                                        <span>
+                                            {% if item.file_size %}
+                                                {{ item.file_size|filesizeformat }}
+                                            {% else %}
+                                                --
+                                            {% endif %}
+                                        </span>
+                                        <span>&bull;</span>
+                                        <span class="text-truncate video-url" style="max-width: 180px;" title="{{ item.youtube_url }}">{{ item.download_date|timesince }} ago</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex-shrink-0">
+                                {% if item.status == 'completed' %}
+                                    <a href="{% url 'download_file' item.download_id %}" class="btn btn-sm btn-primary-gradient px-3 py-2 rounded-pill">
+                                        <i class="bi bi-download me-1"></i> Download
+                                    </a>
+                                {% else %}
+                                    <button class="btn btn-sm btn-secondary-glass text-danger border-danger px-3 py-2 rounded-pill" disabled title="{{ item.error_message }}">
+                                        <i class="bi bi-exclamation-triangle-fill me-1"></i> Failed
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-5 text-secondary" id="no-history">
+                        <i class="bi bi-archive fs-1 d-block mb-2"></i>
+                        Your completed downloads will appear here.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Side Column: Active Downloads panel -->
+    <div class="col-lg-4">
+        <div class="glass-card p-4 h-100">
+            <div class="d-flex align-items-center gap-2 mb-4 border-bottom border-secondary-subtle pb-3">
+                <i class="bi bi-arrow-repeat text-primary fs-4 spinner-border text-primary border-0" style="width: auto; height: auto;"></i>
+                <h4 class="fw-bold mb-0">Active Downloads</h4>
+            </div>
+
+            <div class="download-list" id="active-downloads-list">
+                {% if active_downloads %}
+                    {% for item in active_downloads %}
+                        <div class="download-item active-download-item d-flex align-items-center gap-3 py-3" id="dl-item-{{ item.download_id }}" data-download-id="{{ item.download_id }}">
+                            <div class="thumbnail-preview flex-shrink-0 bg-dark rounded" style="width: 80px; height: 50px;">
+                                {% if item.thumbnail_url %}
+                                    <img src="{{ item.thumbnail_url }}" id="dl-thumb-{{ item.download_id }}" alt="Thumbnail" class="w-100 h-100 object-fit-cover rounded">
+                                    <div class="d-none" id="dl-placeholder-thumb-{{ item.download_id }}"></div>
+                                {% else %}
+                                    <img src="" id="dl-thumb-{{ item.download_id }}" alt="Thumbnail" class="d-none w-100 h-100 object-fit-cover rounded">
+                                    <div class="w-100 h-100 d-flex align-items-center justify-content-center text-secondary" id="dl-placeholder-thumb-{{ item.download_id }}">
+                                        <i class="bi bi-hourglass-split spinner-border spinner-border-sm text-secondary" style="border: none;"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="flex-grow-1 min-w-0">
+                                <div class="d-flex justify-content-between align-items-start gap-2 mb-1">
+                                    <h6 class="fw-bold mb-0 text-truncate video-title text-light" id="dl-title-{{ item.download_id }}">{{ item.video_title }}</h6>
+                                    <span class="badge {% if item.status == 'pending' %}badge-pending{% elif item.status == 'downloading' %}badge-downloading{% else %}badge-processing{% endif %} flex-shrink-0" id="dl-badge-{{ item.download_id }}">
+                                        {% if item.status == 'pending' %}Pending{% elif item.status == 'downloading' %}Downloading{% else %}Processing{% endif %}
+                                    </span>
+                                </div>
+                                <div class="progress mb-1">
+                                    <div class="progress-bar progress-bar-animated progress-bar-striped" id="dl-progress-bar-{{ item.download_id }}" role="progressbar" style="width: {{ item.progress }}%;" aria-valuenow="{{ item.progress }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                                <div class="d-flex justify-content-between text-secondary small">
+                                    <span id="dl-progress-text-{{ item.download_id }}">
+                                        {% if item.status == 'processing' %}Processing files...{% else %}{{ item.progress }}%{% endif %}
+                                    </span>
+                                    <span id="dl-speed-{{ item.download_id }}">
+                                        {% if item.status == 'downloading' and item.speed %}{{ item.speed }}{% elif item.status == 'processing' %}FFmpeg processing{% else %}--{% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-4 text-secondary" id="no-active-downloads">
+                        <i class="bi bi-cloud-arrow-down fs-1 d-block mb-2"></i>
+                        No active downloads.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

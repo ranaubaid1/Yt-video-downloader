@@ -1,0 +1,53 @@
+{% extends 'downloader/base.html' %}
+
+{% block title %}Settings - YT Downloader{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="glass-card p-5">
+            <div class="d-flex align-items-center gap-3 mb-4">
+                <div class="bg-primary bg-opacity-10 p-3 rounded-3 text-primary">
+                    <i class="bi bi-gear-wide-connected fs-2"></i>
+                </div>
+                <div>
+                    <h3 class="fw-bold mb-0">Preferences</h3>
+                    <p class="text-secondary mb-0">Customize download location and settings</p>
+                </div>
+            </div>
+
+            {% if error %}
+                <div class="alert alert-danger border-0 bg-danger-subtle text-danger p-3 rounded-3 mb-4" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}
+                </div>
+            {% endif %}
+
+            {% if success %}
+                <div class="alert alert-success border-0 bg-success-subtle text-success p-3 rounded-3 mb-4" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i>{{ success }}
+                </div>
+            {% endif %}
+
+            <form method="POST">
+                {% csrf_token %}
+                <div class="mb-4">
+                    <label for="download_directory" class="form-label fw-bold text-light">Custom Download Directory</label>
+                    <input type="text" class="form-control glass-input" id="download_directory" name="download_directory" value="{{ settings.download_directory }}" placeholder="e.g. C:\Downloads or D:\Media">
+                    <div class="form-text text-secondary mt-2 small">
+                        Provide an absolute directory path on this computer. If left empty, a folder named <code>downloads</code> under the project root will be used automatically.
+                    </div>
+                </div>
+
+                <div class="border-top border-secondary-subtle pt-4 d-flex justify-content-between align-items-center">
+                    <a href="{% url 'dashboard' %}" class="btn btn-secondary-glass">
+                        <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+                    </a>
+                    <button type="submit" class="btn btn-primary-gradient px-4">
+                        <i class="bi bi-save me-1"></i> Save Settings
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
