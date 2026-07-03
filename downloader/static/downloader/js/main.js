@@ -186,87 +186,98 @@ function renderPreview(data, url) {
     const previewContent = document.getElementById('preview-content');
 
     let html = '';
+    const thumbnailSrc = data.thumbnail || 'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=360';
 
     if (data.is_playlist) {
         // Playlist preview
         html = `
-            <div class="row align-items-center g-4">
-                <div class="col-md-3 text-center">
-                    <div class="thumbnail-preview" style="height: 120px; width: 100%;">
-                        <img src="${data.thumbnail || 'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=360'}" alt="Playlist Thumbnail" class="img-fluid rounded">
-                    </div>
-                </div>
-                <div class="col-md-9">
-                    <h5 class="fw-bold mb-1">${escapeHtml(data.title)}</h5>
-                    <p class="text-secondary mb-3"><i class="bi bi-music-note-list me-1"></i> Playlist &bull; ${data.video_count} videos</p>
-                    
-                    <div class="mb-3 format-selection-container d-flex gap-3">
-                        <div class="format-card p-3 flex-fill text-center active" data-format="MP4">
-                            <i class="bi bi-file-earmark-play fs-4 d-block mb-1 text-primary"></i>
-                            <span class="fw-bold">MP4 Video</span>
+            <div class="dynamic-media-wrapper">
+                <div class="dynamic-media-blur-bg" style="background-image: url('${thumbnailSrc}');"></div>
+                <div class="dynamic-media-content">
+                    <div class="row align-items-center g-4">
+                        <div class="col-md-3 text-center">
+                            <div class="thumbnail-preview" style="height: 120px; width: 100%;">
+                                <img src="${thumbnailSrc}" alt="Playlist Thumbnail" class="img-fluid rounded">
+                            </div>
                         </div>
-                        <div class="format-card p-3 flex-fill text-center" data-format="MP3">
-                            <i class="bi bi-file-earmark-music fs-4 d-block mb-1 text-purple"></i>
-                            <span class="fw-bold">MP3 Audio</span>
+                        <div class="col-md-9">
+                            <h5 class="fw-bold mb-1">${escapeHtml(data.title)}</h5>
+                            <p class="text-secondary mb-3"><i class="bi bi-music-note-list me-1"></i> Playlist &bull; ${data.video_count} videos</p>
+                            
+                            <div class="mb-3 format-selection-container d-flex gap-3">
+                                <div class="format-card p-3 flex-fill text-center active" data-format="MP4">
+                                    <i class="bi bi-file-earmark-play fs-4 d-block mb-1 text-primary"></i>
+                                    <span class="fw-bold">MP4 Video</span>
+                                </div>
+                                <div class="format-card p-3 flex-fill text-center" data-format="MP3">
+                                    <i class="bi bi-file-earmark-music fs-4 d-block mb-1 text-purple"></i>
+                                    <span class="fw-bold">MP3 Audio</span>
+                                </div>
+                            </div>
+                            
+                            <div class="quality-select-wrapper show mb-3">
+                                <label class="form-label text-secondary small">Select Max Video Quality</label>
+                                <select class="form-select glass-input quality-select">
+                                    <option value="best">Best Available Quality</option>
+                                    <option value="1080p">1080p Full HD</option>
+                                    <option value="720p">720p HD</option>
+                                    <option value="360p">360p Standard</option>
+                                </select>
+                            </div>
+
+                            <div class="playlist-videos-list mb-3 p-2 bg-dark rounded" style="max-height: 150px; overflow-y: auto; font-size: 0.85rem;">
+                                <div class="text-secondary px-2 py-1 border-bottom border-secondary mb-1">Videos in Playlist:</div>
+                                ${data.videos.slice(0, 10).map((v, i) => `<div class="text-truncate px-2 py-1 text-light">${i+1}. ${escapeHtml(v.title)}</div>`).join('')}
+                                ${data.videos.length > 10 ? `<div class="text-secondary px-2 py-1 text-center font-italic">+ ${data.video_count - 10} more videos</div>` : ''}
+                            </div>
+
+                            <button class="btn btn-primary-gradient w-100 start-download-btn" data-url="${escapeHtml(url)}">Download Playlist</button>
                         </div>
                     </div>
-                    
-                    <div class="quality-select-wrapper show mb-3">
-                        <label class="form-label text-secondary small">Select Max Video Quality</label>
-                        <select class="form-select glass-input quality-select">
-                            <option value="best">Best Available Quality</option>
-                            <option value="1080p">1080p Full HD</option>
-                            <option value="720p">720p HD</option>
-                            <option value="360p">360p Standard</option>
-                        </select>
-                    </div>
-
-                    <div class="playlist-videos-list mb-3 p-2 bg-dark rounded" style="max-height: 150px; overflow-y: auto; font-size: 0.85rem;">
-                        <div class="text-secondary px-2 py-1 border-bottom border-secondary mb-1">Videos in Playlist:</div>
-                        ${data.videos.slice(0, 10).map((v, i) => `<div class="text-truncate px-2 py-1 text-light">${i+1}. ${escapeHtml(v.title)}</div>`).join('')}
-                        ${data.videos.length > 10 ? `<div class="text-secondary px-2 py-1 text-center font-italic">+ ${data.video_count - 10} more videos</div>` : ''}
-                    </div>
-
-                    <button class="btn btn-primary-gradient w-100 start-download-btn" data-url="${escapeHtml(url)}">Download Playlist</button>
                 </div>
             </div>
         `;
     } else {
         // Single video preview
         html = `
-            <div class="row align-items-center g-4">
-                <div class="col-md-4 text-center">
-                    <div class="thumbnail-preview" style="width: 100%; aspect-ratio: 16/9;">
-                        <img src="${data.thumbnail || 'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=360'}" alt="Video Thumbnail" class="img-fluid w-100 rounded">
-                        <span class="duration-tag">${data.duration}</span>
-                    </div>
-                </div>
-                <div class="col-md-8">
-                    <h5 class="fw-bold mb-1">${escapeHtml(data.title)}</h5>
-                    <p class="text-secondary mb-3 small"><i class="bi bi-youtube me-1"></i> YouTube Video</p>
-                    
-                    <div class="mb-3 format-selection-container d-flex gap-3">
-                        <div class="format-card p-3 flex-fill text-center active" data-format="MP4">
-                            <i class="bi bi-file-earmark-play fs-4 d-block mb-1 text-primary"></i>
-                            <span class="fw-bold">MP4 Video</span>
+            <div class="dynamic-media-wrapper">
+                <div class="dynamic-media-blur-bg" style="background-image: url('${thumbnailSrc}');"></div>
+                <div class="dynamic-media-content">
+                    <div class="row align-items-center g-4">
+                        <div class="col-md-4 text-center">
+                            <div class="thumbnail-preview" style="width: 100%; aspect-ratio: 16/9;">
+                                <img src="${thumbnailSrc}" alt="Video Thumbnail" class="img-fluid w-100 rounded">
+                                <span class="duration-tag">${data.duration}</span>
+                            </div>
                         </div>
-                        <div class="format-card p-3 flex-fill text-center" data-format="MP3">
-                            <i class="bi bi-file-earmark-music fs-4 d-block mb-1 text-purple"></i>
-                            <span class="fw-bold">MP3 Audio</span>
-                        </div>
-                    </div>
-                    
-                    <div class="quality-select-wrapper show mb-3">
-                        <label class="form-label text-secondary small">Select Video Quality</label>
-                        <select class="form-select glass-input quality-select">
-                            <option value="best">Best Available</option>
-                            <option value="1080p">1080p Full HD</option>
-                            <option value="720p">720p HD</option>
-                            <option value="360p">360p Standard</option>
-                        </select>
-                    </div>
+                        <div class="col-md-8">
+                            <h5 class="fw-bold mb-1">${escapeHtml(data.title)}</h5>
+                            <p class="text-secondary mb-3 small"><i class="bi bi-youtube me-1"></i> YouTube Video</p>
+                            
+                            <div class="mb-3 format-selection-container d-flex gap-3">
+                                <div class="format-card p-3 flex-fill text-center active" data-format="MP4">
+                                    <i class="bi bi-file-earmark-play fs-4 d-block mb-1 text-primary"></i>
+                                    <span class="fw-bold">MP4 Video</span>
+                                </div>
+                                <div class="format-card p-3 flex-fill text-center" data-format="MP3">
+                                    <i class="bi bi-file-earmark-music fs-4 d-block mb-1 text-purple"></i>
+                                    <span class="fw-bold">MP3 Audio</span>
+                                </div>
+                            </div>
+                            
+                            <div class="quality-select-wrapper show mb-3">
+                                <label class="form-label text-secondary small">Select Video Quality</label>
+                                <select class="form-select glass-input quality-select">
+                                    <option value="best">Best Available</option>
+                                    <option value="1080p">1080p Full HD</option>
+                                    <option value="720p">720p HD</option>
+                                    <option value="360p">360p Standard</option>
+                                </select>
+                            </div>
 
-                    <button class="btn btn-primary-gradient w-100 start-download-btn" data-url="${escapeHtml(url)}">Download Now</button>
+                            <button class="btn btn-primary-gradient w-100 start-download-btn" data-url="${escapeHtml(url)}">Download Now</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         `;
