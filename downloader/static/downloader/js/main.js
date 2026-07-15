@@ -125,7 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const downloadBtn = e.target.closest('.start-download-btn');
         if (downloadBtn) {
             const url = downloadBtn.dataset.url;
-            const previewCard = downloadBtn.closest('.glass-card');
+            const previewCard = downloadBtn.closest('.dynamic-media-wrapper') || downloadBtn.closest('.glass-card');
             const formatCard = previewCard.querySelector('.format-card.active');
             const formatValue = formatCard ? formatCard.dataset.format : 'MP4';
             const qualitySelect = previewCard.querySelector('.quality-select');
